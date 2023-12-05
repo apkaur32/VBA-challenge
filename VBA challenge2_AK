@@ -1,0 +1,134 @@
+Sub MultiYearStock()
+
+For Each ws In Worksheets
+
+' Set all initial variables needed to calculate what's asked
+Dim ticker As String
+Dim openingPrice As Double
+Dim closingPrice As Double
+Dim Yearly_Change As Double
+Dim Percent_Change As Double
+Dim totalVolume As Double
+totalVolume = 0
+    
+ ' Keep track of the location for each Ticker name in summary table & define where it starts
+  Dim tickerSummary_row As Integer
+  tickerSummary_row = 2
+  
+  'Set initial open price
+  openingPrice = ws.Cells(2, 3).Value
+  
+  'Set location where final values should be stored. Use: ws.Cells(row,column).Value
+    ws.Cells(1, 9).Value = "Ticker"
+    ws.Cells(1, 10).Value = "Yearly Change"
+    ws.Cells(1, 11).Value = "Percent Change"
+    ws.Cells(1, 12).Value = "Total Stock Volume"
+    
+' Determine the Last Row where it stops
+    Dim lastRow As Long
+    lastRow = ws.Cells(Rows.Count, 1).End(xlUp).Row
+
+   ' Start the Loop to go through all Tickers
+  For i = 2 To lastRow
+
+ ' Check if it's still within same Ticker;<> means next cell is different than current cell
+    If ws.Cells(i + 1, 1).Value <> ws.Cells(i, 1).Value Then
+
+      ' Set the Ticker name for previous ticker
+      ticker = ws.Cells(i, 1).Value
+
+      ' Add the Total_Stock_Volume for first appearance of ticker
+      totalVolume = totalVolume + ws.Cells(i, 7).Value
+ 
+      ' Print the Ticker name in the Summary Table
+      ws.Range("I" & tickerSummary_row).Value = ticker
+
+      ' Print the Total_Stock_Volume in the Summary Table
+      ws.Range("L" & tickerSummary_row).Value = totalVolume
+      
+      'Set close price and Calculate Yearly Change
+      closingPrice = ws.Cells(i, 6).Value
+      Yearly_Change = closingPrice - openingPrice
+      
+      'Print the Yearly Change in the Summary Table
+      ws.Range("J" & tickerSummary_row).Value = Yearly_Change
+      
+      'Conditional if openingPrice is 0...
+            If openingPrice = 0 Then
+            
+            Percent_Change = 0
+            
+            Else
+            
+            Percent_Change = (closingPrice - openingPrice) / openingPrice
+            
+            End If
+      
+     'Print the Percent Change in the Summary Table
+      ws.Range("K" & tickerSummary_row).Value = Percent_Change
+      ws.Range("K" & tickerSummary_row).NumberFormat = "0.00%"
+ 
+    'Reset opening price for next ticker
+      openingPrice = ws.Cells(i + 1, 3).Value
+      
+        'Reset the Total_Stock_Volume
+      totalVolume = 0
+              
+ If Yearly_Change > 0 Then
+            ws.Range("J" & tickerSummary_row).Interior.ColorIndex = 4
+        ElseIf Yearly_Change < 0 Then
+            ws.Range("J" & tickerSummary_row).Interior.ColorIndex = 3
+            
+ End If
+
+       'Reset counter. Add one to next summary table row to keep going
+      tickerSummary_row = tickerSummary_row + 1
+    
+
+    ' If the cell immediately following a row is the same ticker...total stock should be added up for everyday
+    Else
+
+    ' ...Continue to Add to the Total_Stock_Volume of same ticker
+      totalVolume = totalVolume + ws.Cells(i, 7).Value
+
+    End If
+
+Next i
+
+'SUMMARY TABLE
+ 'Set location where final values should be stored
+    ws.Cells(1, 16).Value = "Ticker"
+    ws.Cells(1, 17).Value = "Value"
+    ws.Cells(2, 15).Value = "Greatest % Increase"
+    ws.Cells(3, 15).Value = "Greatest % Decrease"
+    ws.Cells(4, 15).Value = "Greatest Total Volume"
+    
+'Calculate "Greatest % Increase" and "Decrease" from Percent Change column[K]; Calculate "Greatest Total Volume" from TSV column[L].
+    
+    'Start new loop
+For i = 2 To tickerSummary_row
+    
+    'MAXMUM INCREASE
+    If ws.Cells(i, 11).Value = Application.WorksheetFunction.Max(ws.Range("K2:K" & tickerSummary_row)) Then
+        ws.Cells(2, 16).Value = ws.Cells(i, 9).Value
+        ws.Cells(2, 17).Value = ws.Cells(i, 11).Value
+        ws.Cells(2, 17).NumberFormat = "0.00%"
+        
+     'MINIMUM INCREASE
+    ElseIf ws.Cells(i, 11).Value = Application.WorksheetFunction.Min(ws.Range("K2:K" & tickerSummary_row)) Then
+        ws.Cells(3, 16).Value = ws.Cells(i, 9).Value
+        ws.Cells(3, 17).Value = ws.Cells(i, 11).Value
+        ws.Cells(3, 17).NumberFormat = "0.00%"
+        
+     'VOLUME MAX
+    ElseIf ws.Cells(i, 12).Value = Application.WorksheetFunction.Max(ws.Range("L2:L" & tickerSummary_row)) Then
+        ws.Cells(4, 16).Value = ws.Cells(i, 9).Value
+        ws.Cells(4, 17).Value = ws.Cells(i, 12).Value
+
+    End If
+    
+ Next i
+    
+Next ws
+    
+End Sub
